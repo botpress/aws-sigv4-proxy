@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -38,12 +39,22 @@ func (m *mockProxyClient) Do(req *http.Request) (*http.Response, error) {
 
 	return m.Response, nil
 }
+
+func BuildHealthRequest() *http.Request {
+	request, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/health", nil)
+	return request
+}
+
 func TestHandler_ServeHTTP(t *testing.T) {
 	type want struct {
 		statusCode int
 		header     http.Header
 		body       []byte
 	}
+
+	healthRequest := BuildHealthRequest()
+	log.Print("healthRequest")
+	log.Print(healthRequest)
 
 	tests := []struct {
 		name    string
@@ -84,12 +95,25 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				body: []byte(`proxy call successful`),
 			},
 		},
+		{
+			name: "responds with OK on health path",
+			handler: &Handler{
+				ProxyClient: &mockProxyClient{Fail: false},
+			},
+			request: healthRequest,
+			want: &want{
+				statusCode: http.StatusOK,
+				body:       []byte(`OK`),
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := httptest.NewRecorder()
 
+			log.Print("inside test run")
+			log.Print(tt.request)
 			tt.handler.ServeHTTP(r, tt.request)
 
 			response := r.Result()
