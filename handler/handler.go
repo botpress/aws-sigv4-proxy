@@ -34,8 +34,6 @@ func (h *Handler) write(w http.ResponseWriter, status int, body []byte) {
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Print("inside ServeHTTP")
-	log.Print(r)
 	if r.URL != nil && r.URL.Path == "/health" {
 		h.write(w, http.StatusOK, nil)
 		return
