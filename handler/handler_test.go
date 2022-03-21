@@ -38,12 +38,20 @@ func (m *mockProxyClient) Do(req *http.Request) (*http.Response, error) {
 
 	return m.Response, nil
 }
+
+func BuildHealthRequest() *http.Request {
+	request, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/health", nil)
+	return request
+}
+
 func TestHandler_ServeHTTP(t *testing.T) {
 	type want struct {
 		statusCode int
 		header     http.Header
 		body       []byte
 	}
+
+	healthRequest := BuildHealthRequest()
 
 	tests := []struct {
 		name    string
@@ -68,6 +76,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			handler: &Handler{
 				ProxyClient: &mockProxyClient{
 					Response: &http.Response{
+						StatusCode: 200,
 						Header: http.Header{
 							"test": []string{"header"},
 						},
@@ -82,6 +91,18 @@ func TestHandler_ServeHTTP(t *testing.T) {
 					"Test": []string{"header"},
 				},
 				body: []byte(`proxy call successful`),
+			},
+		},
+		{
+			name: "responds with OK on health path",
+			handler: &Handler{
+				ProxyClient: &mockProxyClient{Fail: false},
+			},
+			request: healthRequest,
+			want: &want{
+				statusCode: http.StatusOK,
+				header:     http.Header{},
+				body:       []byte{},
 			},
 		},
 	}
