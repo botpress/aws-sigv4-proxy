@@ -19,7 +19,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -53,8 +52,6 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	}
 
 	healthRequest := BuildHealthRequest()
-	log.Print("healthRequest")
-	log.Print(healthRequest)
 
 	tests := []struct {
 		name    string
@@ -79,6 +76,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			handler: &Handler{
 				ProxyClient: &mockProxyClient{
 					Response: &http.Response{
+						StatusCode: 200,
 						Header: http.Header{
 							"test": []string{"header"},
 						},
@@ -103,7 +101,8 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			request: healthRequest,
 			want: &want{
 				statusCode: http.StatusOK,
-				body:       []byte(`OK`),
+				header:     http.Header{},
+				body:       []byte{},
 			},
 		},
 	}
@@ -112,8 +111,6 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := httptest.NewRecorder()
 
-			log.Print("inside test run")
-			log.Print(tt.request)
 			tt.handler.ServeHTTP(r, tt.request)
 
 			response := r.Result()
